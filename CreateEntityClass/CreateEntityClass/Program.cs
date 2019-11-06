@@ -18,12 +18,14 @@ namespace CreateEntityClass
 
             Console.Write("Server: ");
             string server = Console.ReadLine();
-            Console.Write("Port: ");
+            Console.Write("Port(5432): ");
             string port = Console.ReadLine();
+            if (string.Empty == port) port = "5432";
             Console.Write("Database: ");
             string database = Console.ReadLine();
-            Console.Write("Schema: ");
+            Console.Write("Schema(dbo): ");
             string schema = Console.ReadLine();
+            if (string.Empty == schema) schema = "dbo";
             Console.Write("User: ");
             string user = Console.ReadLine();
             Console.Write("Password: ");
@@ -110,7 +112,7 @@ namespace CreateEntityClass
             using (var command = conn.CreateCommand())
             {
                 // テーブル情報を取得
-                command.CommandText = $@"SELECT * FROM information_schema.columns WHERE table_name = '{tblName}'AND table_schema='{schema}' ORDER BY ordinal_position;";
+                command.CommandText = $@"SELECT * FROM information_schema.columns WHERE table_name = '{tblName}' AND table_schema='{schema}' ORDER BY ordinal_position;";
                 var result = new List<TableInfo>();
                 using (var reader = command.ExecuteReader())
                 {
@@ -119,7 +121,8 @@ namespace CreateEntityClass
                         var tableInfo = new TableInfo
                         {
                             ColumnName = reader["column_name"].ToString(),
-                            DataType = reader["data_type"].ToString()
+                            DataType = reader["data_type"].ToString(),
+                            IsNullable = reader["is_nullable"].ToString()
                         };
                         result.Add(tableInfo);
                     }

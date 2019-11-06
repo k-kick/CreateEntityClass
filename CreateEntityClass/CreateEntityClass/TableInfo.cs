@@ -13,5 +13,6 @@ namespace CreateEntityClass
     {
         public string ColumnName { get; set; }
         public string DataType { get; set; }
+        public string IsNullable { get; set; }
     }
 }

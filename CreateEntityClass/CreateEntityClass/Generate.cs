@@ -16,8 +16,9 @@ namespace CreateEntityClass
         /// PostgresとC#の型の紐づけ
         /// </summary>
         /// <param name="dbDataType">データベースのデータ型</param>
+        /// <param name="isNullable">NOT NULLの場合「NO」。そうでない場合「YES」</param>
         /// <returns>C#で使用する変数型</returns>
-        private Type ConvertPgDataTypeToCsParameterType(string dbDataType)
+        private Type ConvertPgDataTypeToCsParameterType(string dbDataType, string isNullable)
         {
             switch (dbDataType)
             {
@@ -26,27 +27,27 @@ namespace CreateEntityClass
                 case "text":
                     return typeof(string);
                 case "boolean":
-                    return typeof(bool);
+                    return typeof(bool?);
                 case "smallint":
-                    return typeof(short);
+                    return typeof(short?);
                 case "integer":
-                    return typeof(int);
+                    return typeof(int?);
                 case "serial":
-                    return typeof(int);
+                    return typeof(int?);
                 case "bigint":
-                    return typeof(long);
+                    return typeof(long?);
                 case "bytea":
                     return typeof(byte[]);
                 case "real":
-                    return typeof(double);
+                    return typeof(double?);
                 case "double precision":
-                    return typeof(double);
+                    return typeof(double?);
                 case "time without time zone":
-                    return typeof(DateTime);
+                    return typeof(DateTime?);
                 case "timestamp with time zone":
-                    return typeof(DateTime);
+                    return typeof(DateTime?);
                 case "timestamp without time zone":
-                    return typeof(DateTime);
+                    return typeof(DateTime?);
                 default:
                     throw new ArgumentException($"型が不明です。データベースのデータ型: { dbDataType }");
             }
@@ -106,7 +107,7 @@ namespace CreateEntityClass
                 {
                     Attributes = MemberAttributes.Public | MemberAttributes.Final,
                     Name = $"{ ColumnName_Processed } {{ get; set; }}",
-                    Type = new CodeTypeReference(this.ConvertPgDataTypeToCsParameterType(t.DataType)),
+                    Type = new CodeTypeReference(this.ConvertPgDataTypeToCsParameterType(t.DataType, t.IsNullable)),
                 };
                 field.CustomAttributes.Add(customAttribute_Field);
                 classType.Members.Add(field);
