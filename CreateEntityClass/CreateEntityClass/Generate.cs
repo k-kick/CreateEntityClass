@@ -27,29 +27,29 @@ namespace CreateEntityClass
                 case "text":
                     return typeof(string);
                 case "boolean":
-                    return typeof(bool?);
+                    return (isNullable == "YES") ? typeof(bool?) : typeof(bool);
                 case "smallint":
-                    return typeof(short?);
+                    return (isNullable == "YES") ? typeof(short?) : typeof(short);
                 case "integer":
-                    return typeof(int?);
+                    return (isNullable == "YES") ? typeof(int?) : typeof(int);
                 case "serial":
-                    return typeof(int?);
+                    return (isNullable == "YES") ? typeof(int?) : typeof(int);
                 case "bigint":
-                    return typeof(long?);
+                    return (isNullable == "YES") ? typeof(long?) : typeof(long);
                 case "bytea":
                     return typeof(byte[]);
                 case "real":
-                    return typeof(double?);
+                    return (isNullable == "YES") ? typeof(double?) : typeof(double);
                 case "double precision":
-                    return typeof(double?);
+                    return (isNullable == "YES") ? typeof(double?) : typeof(double);
                 case "time without time zone":
-                    return typeof(DateTime?);
+                    return (isNullable == "YES") ? typeof(DateTime?) : typeof(DateTime);
                 case "timestamp with time zone":
-                    return typeof(DateTime?);
+                    return (isNullable == "YES") ? typeof(DateTime?) : typeof(DateTime);
                 case "timestamp without time zone":
-                    return typeof(DateTime?);
+                    return (isNullable == "YES") ? typeof(DateTime?) : typeof(DateTime);
                 default:
-                    throw new ArgumentException($"型が不明です。データベースのデータ型: { dbDataType }");
+                    throw new ArgumentException($"想定されていない型です。PostgreSQLのデータ型: {dbDataType}");
             }
         }
 
@@ -76,40 +76,41 @@ namespace CreateEntityClass
         /// <param name="nameSpace">作成するクラスが所属するNameSpace名</param>
         /// <param name="tblName">テーブルの名前</param>
         /// <param name="tableInfo">データベースから取得したテーブルの情報</param>
-        public void GenerateEntityClass(string nameSpace, string tblName, List<TableInfo> tableInfo)
+        public void CreateEntityClass(string nameSpace, string tblName, List<ColumnInfo> tableInfo)
         {
-            // CodeCompileUnitのインスタンスを作成
             var codeCompileUnit = new CodeCompileUnit();
-            // 名前空間を追加
             var name = new CodeNamespace(nameSpace);
+            CodeNamespaceImport[] codeNamespaceImports = {
+                new CodeNamespaceImport("System"),
+                new CodeNamespaceImport("System.ComponentModel.DataAnnotations"),
+                new CodeNamespaceImport("System.ComponentModel.DataAnnotations.Schema") };
+            name.Imports.AddRange(codeNamespaceImports);
             codeCompileUnit.Namespaces.Add(name);
-            // クラスを追加
+
             var classType = new CodeTypeDeclaration(tblName);
-            // クラスの属性(つまりテーブル名の属性)を定義。[Table("列名")]の定義
             CodeAttributeDeclaration customAttribute_Class = new CodeAttributeDeclaration(
-                "System.ComponentModel.DataAnnotations.Schema.Table",
+                "Table",
                 new CodeAttributeArgument(new CodePrimitiveExpression(tblName)));
-            // クラスの属性を追加
             classType.CustomAttributes.Add(customAttribute_Class);
 
-            foreach (var t in tableInfo)
+            foreach (var column in tableInfo)
             {
-                // ColumnNameの先頭1文字を大文字にし、変数名[ColumnName_Processed]を作成
-                string ColumnName_Source = t.ColumnName;
+                string ColumnNameSource = column.Name;
                 TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
-                string ColumnName_Processed = textInfo.ToTitleCase(ColumnName_Source);
-                // フィールドの属性(つまり列名の属性)を定義。[Column("列名")]の定義
-                CodeAttributeDeclaration customAttribute_Field = new CodeAttributeDeclaration(
-                    "System.ComponentModel.DataAnnotations.Schema.Column",
-                    new CodeAttributeArgument(new CodePrimitiveExpression(ColumnName_Source)));
+                // カラム名の先頭1文字を大文字にし、変数名にする
+                string ColumnNameProcessed = textInfo.ToTitleCase(ColumnNameSource);
+                // フィールドの属性を定義。[Column("列名")]の定義
+                CodeAttributeDeclaration customAttributeField = new CodeAttributeDeclaration(
+                    "Column",
+                    new CodeAttributeArgument(new CodePrimitiveExpression(ColumnNameSource)));
                 // CodeMemberフィールドを作成し、プロパティを追加
                 var field = new CodeMemberField
                 {
-                    Attributes = MemberAttributes.Public | MemberAttributes.Final,
-                    Name = $"{ ColumnName_Processed } {{ get; set; }}",
-                    Type = new CodeTypeReference(this.ConvertPgDataTypeToCsParameterType(t.DataType, t.IsNullable)),
+                    Attributes = MemberAttributes.Public | MemberAttributes.Final | MemberAttributes.ScopeMask,
+                    Name = $"{ ColumnNameProcessed } {{ get; set; }}",
+                    Type = new CodeTypeReference(this.ConvertPgDataTypeToCsParameterType(column.DataType, column.IsNullable)),
                 };
-                field.CustomAttributes.Add(customAttribute_Field);
+                field.CustomAttributes.Add(customAttributeField);
                 classType.Members.Add(field);
             }
 

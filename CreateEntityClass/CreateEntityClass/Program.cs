@@ -10,11 +10,21 @@ using System.IO;
 
 namespace CreateEntityClass
 {
+    /// <summary>
+    /// カラム情報格納クラス
+    /// </summary>
+    class ColumnInfo
+    {
+        public string Name { get; set; }
+        public string DataType { get; set; }
+        public string IsNullable { get; set; }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("全テーブルのEntityクラス作成プログラム(PostgreSQL版) 接続先DBの情報を入力して下さい。");
+            Console.WriteLine("全テーブルのEntityクラス作成プログラム(EntityFramework6.Npgsql版) 接続先DBの情報を入力して下さい。");
 
             Console.Write("Server: ");
             string server = Console.ReadLine();
@@ -46,15 +56,15 @@ namespace CreateEntityClass
                 conn.Open();
 
                 // 全テーブル名のリスト作成
-                var tblNames = GetAllTablesNameList(conn);
+                var tblNames = GetAllTablesNamesList(conn);
 
                 foreach (var tblName in tblNames)
                 {
-                    List<TableInfo> tableInfo;
+                    List<ColumnInfo> tableInfo;
                     // テーブル情報を取得
-                    tableInfo = GetTableInfo(tblName, schema, conn);
+                    tableInfo = GetColumnsInfo(tblName, schema, conn);
                     // Entityクラスを作成し、ファイルに保存
-                    new Generate().GenerateEntityClass(nameSpace, tblName, tableInfo);
+                    new Generate().CreateEntityClass(nameSpace, tblName, tableInfo);
                 }
 
                 conn.Close();
@@ -66,7 +76,7 @@ namespace CreateEntityClass
         /// </summary>
         /// <param name="conn">コネクション</param>
         /// <returns>全テーブル名のリスト</returns>
-        static List<string> GetAllTablesNameList(NpgsqlConnection conn)
+        static List<string> GetAllTablesNamesList(NpgsqlConnection conn)
         {
             var result = new List<string>();
 
@@ -107,24 +117,23 @@ namespace CreateEntityClass
         /// <param name="schema">情報を取得するスキーマの名前</param>
         /// <param name="conn">コネクション</param>
         /// <returns>テーブル情報</returns>
-        static List<TableInfo> GetTableInfo(string tblName, string schema, NpgsqlConnection conn)
+        static List<ColumnInfo> GetColumnsInfo(string tblName, string schema, NpgsqlConnection conn)
         {
             using (var command = conn.CreateCommand())
             {
-                // テーブル情報を取得
-                command.CommandText = $@"SELECT * FROM information_schema.columns WHERE table_name = '{tblName}' AND table_schema='{schema}' ORDER BY ordinal_position;";
-                var result = new List<TableInfo>();
+                command.CommandText = $@"SELECT * FROM information_schema.columns WHERE table_name = '{tblName}' AND table_schema = '{schema}' ORDER BY ordinal_position;";
+                var result = new List<ColumnInfo>();
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        var tableInfo = new TableInfo
+                        var columnInfo = new ColumnInfo
                         {
-                            ColumnName = reader["column_name"].ToString(),
+                            Name = reader["column_name"].ToString(),
                             DataType = reader["data_type"].ToString(),
                             IsNullable = reader["is_nullable"].ToString()
                         };
-                        result.Add(tableInfo);
+                        result.Add(columnInfo);
                     }
                 }
                 return result;
