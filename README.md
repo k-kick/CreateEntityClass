@@ -2,7 +2,7 @@
 Entityクラス作成プログラム (EntityFramework6.Npgsql対応)
 
 ## 使い方
-実行すると、対話形式でPostgreSQLの接続先や、出力するcsの名前空間を聞かれます。入力していき最後にEnterでクラスファイルの作成が始まります。クラスファイルは、EXEと同じパスに出力されます。
+CreateEntityClass.exeを実行すると、対話形式でPostgreSQLの接続先や、出力するEntityクラスの名前空間を聞かれます。全て入力するとクラスファイルの生成が行われます。EXEと同じ階層に.csが出力されます。
 
 ~~~
 >CreateEntityClass.exe
