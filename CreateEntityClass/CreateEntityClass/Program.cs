@@ -26,8 +26,9 @@ namespace CreateEntityClass
         {
             Console.WriteLine("全テーブルのEntityクラス作成プログラム(EntityFramework6.Npgsql版) 接続先DBの情報を入力して下さい。");
 
-            Console.Write("Server: ");
+            Console.Write("Server(localhost): ");
             string server = Console.ReadLine();
+            if (string.Empty == server) server = "localhost";
             Console.Write("Port(5432): ");
             string port = Console.ReadLine();
             if (string.Empty == port) port = "5432";
@@ -36,10 +37,12 @@ namespace CreateEntityClass
             Console.Write("Schema(dbo): ");
             string schema = Console.ReadLine();
             if (string.Empty == schema) schema = "dbo";
-            Console.Write("User: ");
+            Console.Write("User(postgres): ");
             string user = Console.ReadLine();
-            Console.Write("Password: ");
+            if (string.Empty == user) user = "postgres";
+            Console.Write("Password(postgres): ");
             string password = Console.ReadLine();
+            if (string.Empty == password) password = "postgres";
             string connString = GetConnString(server, port, database, user, password);
             Console.WriteLine("生成するEntityクラスの名前空間を入力して下さい。");
             Console.Write("namespace: ");

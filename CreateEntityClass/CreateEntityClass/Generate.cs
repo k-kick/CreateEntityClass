@@ -22,6 +22,10 @@ namespace CreateEntityClass
         {
             switch (dbDataType)
             {
+                case "numeric":
+                    return (isNullable == "YES") ? typeof(double?) : typeof(double);
+                case "character":
+                    return typeof(string);
                 case "character varying":
                     return typeof(string);
                 case "text":
@@ -42,6 +46,8 @@ namespace CreateEntityClass
                     return (isNullable == "YES") ? typeof(double?) : typeof(double);
                 case "double precision":
                     return (isNullable == "YES") ? typeof(double?) : typeof(double);
+                case "date":
+                    return (isNullable == "YES") ? typeof(DateTime?) : typeof(DateTime);
                 case "time without time zone":
                     return (isNullable == "YES") ? typeof(DateTime?) : typeof(DateTime);
                 case "timestamp with time zone":
