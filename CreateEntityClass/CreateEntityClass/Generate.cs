@@ -73,7 +73,6 @@ namespace CreateEntityClass
             {
                 writer.Write(fileDetail);
             }
-
         }
 
         /// <summary>
@@ -116,6 +115,8 @@ namespace CreateEntityClass
                     Name = $"{ ColumnNameProcessed } {{ get; set; }}",
                     Type = new CodeTypeReference(this.ConvertPgDataTypeToCsParameterType(column.DataType, column.IsNullable)),
                 };
+                if (column.Key)
+                    field.CustomAttributes.Add(new CodeAttributeDeclaration("Key"));
                 field.CustomAttributes.Add(customAttributeField);
                 classType.Members.Add(field);
             }

@@ -18,6 +18,7 @@ namespace CreateEntityClass
         public string Name { get; set; }
         public string DataType { get; set; }
         public string IsNullable { get; set; }
+        public bool Key { get; set; } = false;
     }
 
     class Program
@@ -65,7 +66,7 @@ namespace CreateEntityClass
                 {
                     List<ColumnInfo> tableInfo;
                     // テーブル情報を取得
-                    tableInfo = GetColumnsInfo(tblName, schema, conn);
+                    tableInfo = GetColumnsInfo(database, tblName, schema, conn);
                     // Entityクラスを作成し、ファイルに保存
                     new Generate().CreateEntityClass(nameSpace, tblName, tableInfo);
                 }
@@ -116,26 +117,50 @@ namespace CreateEntityClass
         /// <summary>
         /// 指定したテーブル情報を取得
         /// </summary>
+        /// <param name="database">情報を取得するデータベースの名前</param>
         /// <param name="tblName">情報を取得するテーブルの名前</param>
         /// <param name="schema">情報を取得するスキーマの名前</param>
         /// <param name="conn">コネクション</param>
         /// <returns>テーブル情報</returns>
-        static List<ColumnInfo> GetColumnsInfo(string tblName, string schema, NpgsqlConnection conn)
+        static List<ColumnInfo> GetColumnsInfo(string database, string tblName, string schema, NpgsqlConnection conn)
         {
             using (var command = conn.CreateCommand())
             {
+                List<string> keyColumns = new List<string>();
+                // 主キーのカラムのリストを取る
+                command.CommandText = $@"
+                    SELECT ccu.column_name AS COLUMN_NAME
+                    FROM information_schema.table_constraints tc ,information_schema.constraint_column_usage ccu
+                    WHERE tc.table_catalog='{database}' AND tc.table_name='{tblName}' AND
+                          tc.constraint_type='PRIMARY KEY' AND tc.table_catalog=ccu.table_catalog AND
+                          tc.table_schema=ccu.table_schema AND tc.table_name=ccu.table_name AND
+                          tc.constraint_name=ccu.constraint_name";
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        keyColumns.Add(reader["column_name"].ToString());
+                    }
+                }
+
                 command.CommandText = $@"SELECT * FROM information_schema.columns WHERE table_name = '{tblName}' AND table_schema = '{schema}' ORDER BY ordinal_position;";
                 var result = new List<ColumnInfo>();
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
+                        // カラム名、型、null許容 などの情報を格納
                         var columnInfo = new ColumnInfo
                         {
                             Name = reader["column_name"].ToString(),
                             DataType = reader["data_type"].ToString(),
                             IsNullable = reader["is_nullable"].ToString()
                         };
+                        if (keyColumns.Contains(columnInfo.Name))
+                        {
+                            // 主キーの場合
+                            columnInfo.Key = true;
+                        }
                         result.Add(columnInfo);
                     }
                 }
